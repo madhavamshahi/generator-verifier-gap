@@ -1,0 +1,13 @@
+# Generation cache: large, machine-specific, and regenerated on demand.
+results/cache/
+results/raw_prebalance/
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+__pycache__/
+*.pyc
+.DS_Store

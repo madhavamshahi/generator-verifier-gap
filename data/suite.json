@@ -1,0 +1,12 @@
+{
+  "seed": 20260919,
+  "n_per_family": 120,
+  "counts": {
+    "gsm8k": 120,
+    "arc": 120,
+    "mbpp": 120,
+    "csp": 120,
+    "logic": 120,
+    "wordcon": 120
+  }
+}

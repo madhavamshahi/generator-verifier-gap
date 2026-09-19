@@ -1,0 +1,61 @@
+\section{Case Study: Citation Verification}
+\label{sec:casestudy}
+
+The six families of Section~\ref{sec:setup} are controlled by construction. To
+check that the framework says something useful about a task people actually
+deploy language models on, we apply it to reference generation---a setting
+where fabricated output is a known and consequential failure mode, and where an
+external registry supplies a near-perfect verifier for the price of an HTTP
+request.
+
+The task ``produce a real published reference on topic $X$'' maps onto the
+framework exactly. A generator proposes $k$ candidate references; a selector
+picks one; ground truth is whether the reference exists. We ran this with
+Qwen2.5-1.5B over \nCitTopics{} research topics spanning the sciences, drawing
+$k=8$ candidate references per topic, and resolved every candidate against the
+OpenAlex catalogue by fuzzy title match (threshold $0.88$), which supplies both
+ground truth and one of the two selectors under comparison.
+
+\paragraph{Resolution failures are not fabrications.}
+A registry lookup can fail because the paper does not exist or because the
+service is temporarily unavailable, and conflating the two would convert a
+network condition into a measured hallucination. We retry with exponential
+backoff and record any candidate we still cannot resolve as \emph{unresolved}
+rather than absent; \nCitUnresolved{} candidates were excluded on this basis,
+and a topic contributes to the analysis only if all eight of its candidates
+resolved.
+
+\subsection{Results}
+
+The generator hallucinates heavily: \citHallucRate{} of proposed references
+could not be found, so a single candidate is real with probability
+$\citPone{}$. Coverage is much higher---at least one of eight candidates
+resolves for $\citCoverage{}$ of topics---so the headroom is large and the
+entire question is which selector can convert it.
+
+\begin{description}[leftmargin=0pt,itemsep=1pt,topsep=2pt,font=\normalfont\itshape]
+\item[The model as its own critic.] Asked whether each reference is real, the
+  model answers ``real'' for \citSaysReal{} of candidates, including most of the
+  fabricated ones. Its pairwise gap on this task is $\gap = \citG{}$, and its
+  realised selection efficiency is $\eff = \citEtaLLM{}$, at a cost of
+  \citLLMTokens{} tokens.
+\item[The external registry.] The same selection made by an OpenAlex lookup
+  attains $\eff = \citEtaAPI{}$ at zero model tokens, raising accuracy from
+  $\citPone{}$ to $\citAccAPI{}$.
+\end{description}
+
+The latent-score model of Proposition~\ref{prop:latent}, given only the measured
+$\gap$, predicts $\hat{\eff} = \citPredEta{}$ for the critic---derived without
+running the selection at all.
+
+\subsection{What the case study shows}
+
+Two agents that look alike in an architecture diagram---one checks citations,
+one polishes prose---are not alike at all under this framework. The first has an
+external oracle available for the price of an HTTP request and converts nearly
+all of its coverage headroom. The second has no oracle, and a model asked to
+supply one performs near chance. The generalisable lesson is that the question
+worth asking about a proposed agent is not how capable it is but whether
+anything cheap can tell when it is wrong. Where an external check exists, use
+it: in our measurements it dominated the model-critic alternative on both
+accuracy and cost, which is not a trade-off but a strict improvement.

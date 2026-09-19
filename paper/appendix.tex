@@ -1,0 +1,84 @@
+\section{Reproducibility}
+\label{app:repro}
+
+Every result in this paper was produced by the code released alongside it, on a
+single Apple M4 Pro (24\,GB unified memory) with no API access and no paid
+compute. The pipeline is:
+
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt,topsep=3pt]
+\item \texttt{gvgap/build\_data.py} --- builds the frozen \nTasks{}-task suite.
+  Synthetic families are generated from seed \texttt{20260919}; benchmark
+  families are subsampled with the same seed. The calibration/held-out split is
+  assigned here, before any model runs.
+\item \texttt{gvgap/run.py} --- runs all architectures for all models. Every
+  generation is cached by a hash of (model, prompt, max tokens, temperature,
+  seed), so the experiment is resumable and re-running it is free.
+\item \texttt{gvgap/analysis.py}, \texttt{predict.py}, \texttt{report.py},
+  \texttt{figures.py} --- aggregation, hypothesis tests, tables and figures.
+\end{enumerate}
+
+\noindent
+Total generations: \nGenerations{}. Models are Qwen2.5-Instruct at 0.5B and 1.5B \citep{qwen2024qwen25} in \texttt{bfloat16} via MLX; \texttt{gvgap/run.py} runs a 3B scale point unchanged by uncommenting one line.
+
+\paragraph{Estimator validation.} The estimators the paper's claims rest on are
+tested against ground truth rather than against themselves
+(\texttt{gvgap/test\_metrics.py}): $\mathrm{pass}@k$ is checked against
+exhaustive enumeration of all $k$-subsets for every $n \le 8$; the bootstrap
+interval is checked for empirical coverage ($0.963$ against a nominal $0.95$);
+the paired bootstrap is checked for its false-positive rate under the null
+($0.057$ at $\alpha=0.05$); and the latent-score model is checked against its own
+boundary conditions, including that it reduces exactly to uniform selection
+($c/k$) when $\gap=0$ and is monotone in $\gap$.
+
+\paragraph{Bibliography hygiene.} Every reference in this paper was resolved
+against the arXiv API before inclusion, and entries are generated from the
+returned metadata rather than transcribed. This caught four incorrect titles in
+our own first draft of the reference list --- an error rate of roughly one in
+six --- which is a small illustration of the case study's point in
+Section~\ref{sec:casestudy}: a cheap external check finds errors that careful
+reading does not.
+
+\section{Task Family Details}
+\label{app:tasks}
+
+\paragraph{CSP.} Moduli are drawn from $\{3,\dots,9\}$ with $k=2$ congruences
+and lower bounds in $\{10,20,30,50,100\}$. The answer is verified structurally:
+we re-check the congruences and confirm minimality by an upward scan, rather
+than trusting the stored answer.
+
+\paragraph{Logic.} $4$--$6$ entities are placed in a total order; the $n-1$
+adjacent comparisons are emitted in random surface form (``$X$ is taller than
+$Y$'' or ``$Y$ is shorter than $X$'') and shuffled. The question asks for the
+maximum or minimum.
+
+\paragraph{WordCon.} Target lengths are $6$--$9$ words with two required
+content words drawn from a fixed topic list. Grading tokenises on
+\texttt{[A-Za-z']+} and requires an exact length match plus both required words
+as case-insensitive substrings.
+
+\paragraph{MBPP.} We use the full test split, shuffled with the suite seed.
+Candidates are executed in a subprocess with an 8-second timeout. The selector
+may use only the single test shown in the prompt; grading uses the remaining
+tests.
+
+\section{Prompts}
+\label{app:prompts}
+
+All architectures share one system prompt per family, so that differences are
+attributable to orchestration rather than prompt engineering. The judge is shown
+candidates in an order permuted per task with a fixed seed, and the permutation
+is recorded so that position bias can be measured separately (reported in
+Table~\ref{tab:diagnostics}). The pairwise probe presents exactly one correct
+and one incorrect candidate in randomised order. Full prompt text is in
+\texttt{gvgap/prompts.py}.
+
+\section{Figure Design}
+\label{app:figures}
+
+Categorical colours are assigned in a fixed order so that an architecture
+carries the same hue in every figure, and the palette was checked
+programmatically for colour-vision-deficiency separation (worst adjacent pair
+$\Delta E = 9.1$ in OKLab$\times100$, above the threshold of 8) rather than by
+eye. Three hues fall below a 3:1 contrast ratio against the page, so every
+figure also carries axis labels and a corresponding table, and identity is never
+carried by colour alone.

@@ -1,0 +1,176 @@
+\section{Framework}
+\label{sec:framework}
+
+\subsection{Setup}
+
+Fix a task distribution $\mathcal{T}$ and a generator $\pi$ (a language model
+with a decoding temperature). For a task $t$, drawing a sample $y \sim \pi(t)$
+yields a correct answer with probability $\pone(t)$, and we write
+$\pone = \mathbb{E}_t[\pone(t)]$ for the single-sample accuracy. A
+\emph{$k$-agent ensemble} draws $y_1,\dots,y_k \sim \pi(t)$ independently and
+applies a \emph{selector} $\sigma$ that returns one index. We write
+$A_\sigma(k)$ for the resulting accuracy.
+
+Two reference selectors bound the rest. The \emph{oracle} selector returns a
+correct candidate whenever one exists, so its accuracy is the coverage
+\begin{equation}
+\cov(k) \;=\; \mathbb{E}_t\bigl[\Pr(\exists\, i \le k : y_i \text{ correct})\bigr],
+\end{equation}
+which we estimate with the unbiased $\mathrm{pass}@k$ estimator of
+\citet{chen2021codex} from a pool of $n \ge k$ samples. The
+\emph{uninformative} selector chooses an index independently of correctness;
+its accuracy is $\pone$ for every $k$, since each candidate is marginally
+correct with probability $\pone$.
+
+\subsection{The coverage--selection decomposition}
+
+\begin{definition}[Selection efficiency]
+For a selector $\sigma$ with $\cov(k) \neq \pone$,
+\begin{equation}
+\eff_\sigma(k) \;=\; \frac{A_\sigma(k) - \pone}{\cov(k) - \pone}.
+\label{eq:eta}
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Decomposition]
+\label{prop:decomp}
+For any selector, $A_\sigma(k) = \pone + \eff_\sigma(k)(\cov(k)-\pone)$.
+An uninformative selector has $\eff_\sigma(k)=0$ and the oracle has
+$\eff_\sigma(k)=1$. Every selector satisfies $\eff_\sigma(k) \le 1$;
+$\eff_\sigma(k) < 0$ is attainable and indicates a selector anti-correlated
+with correctness.
+\end{proposition}
+
+\begin{proof}
+The identity is Equation~\eqref{eq:eta} rearranged. For the uninformative
+selector, selection is independent of correctness, so the chosen candidate is
+correct with its marginal probability $\pone$, giving $\eff=0$. For the oracle
+$A_\sigma(k)=\cov(k)$ gives $\eff=1$. No selector can exceed $\cov(k)$, since it
+returns one of the generated candidates and is correct only if that candidate
+is; hence $\eff_\sigma(k)\le 1$. Nothing prevents $A_\sigma(k) < \pone$---a
+selector that systematically prefers confident errors---so $\eff_\sigma(k)$ is
+not bounded below by zero.
+\end{proof}
+
+Proposition~\ref{prop:decomp} is elementary, and deliberately so: its value is
+that it names the two factors that any multi-agent gain must pass through, and
+both are separately measurable. It also makes the failure modes explicit.
+A selector cannot rescue a pool with no headroom ($\cov(k) \approx \pone$), and
+headroom is worthless without a selector that can find it ($\eff \approx 0$).
+The possibility $\eff < 0$ is not hypothetical; we observe it
+(Section~\ref{sec:results}).
+
+\subsection{From pairwise discrimination to listwise selection}
+
+The decomposition is useless prospectively unless $\eff$ can be estimated
+without building the system. We estimate it from a cheaper probe.
+
+\begin{definition}[Generator--verifier gap]
+Present the model with a task and two candidate answers, one correct and one
+incorrect, in randomised order, and ask which is correct. Let $q$ be the
+probability it answers correctly. The generator--verifier gap is
+$\gap = 2q - 1 \in [-1, 1]$.
+\end{definition}
+
+$\gap=0$ means the model cannot distinguish its own correct answers from its
+incorrect ones; $\gap=1$ means it always can; $\gap<0$ means it is
+systematically misled. Crucially $\gap$ is a \emph{pairwise} quantity, while a
+$k$-agent ensemble makes a \emph{listwise} choice. We bridge the two with a
+minimal latent-score model.
+
+\begin{definition}[Latent-score selector]
+\label{def:latent}
+The verifier assigns candidate $i$ a score $s_i$, drawn independently from
+$\mathcal{N}(\delta,1)$ if $y_i$ is correct and $\mathcal{N}(0,1)$ otherwise,
+and selects $\arg\max_i s_i$.
+\end{definition}
+
+\begin{proposition}[Identification and prediction]
+\label{prop:latent}
+Under Definition~\ref{def:latent}, the pairwise preference probability is
+$q = \Phi(\delta/\sqrt{2})$, so an observed gap identifies the separation
+\begin{equation}
+\delta = \sqrt{2}\,\Phi^{-1}\!\left(\tfrac{1+\gap}{2}\right)
+\label{eq:delta}
+\end{equation}
+with no free parameters. If $c$ of the $k$ candidates are correct, the
+probability of selecting a correct one is
+\begin{equation}
+P(c,k,\delta) \;=\; \Pr\Bigl(\max_{j\le c} X_j > \max_{j \le k-c} Z_j\Bigr),
+\quad X_j \sim \mathcal{N}(\delta,1),\; Z_j \sim \mathcal{N}(0,1),
+\label{eq:listwise}
+\end{equation}
+and the predicted selector accuracy is
+$\hat{A}_\sigma(k) = \mathbb{E}_{c}\bigl[P(c,k,\delta)\bigr]$, with the
+expectation taken over the observed distribution of $c$. The predicted
+selection efficiency follows from Equation~\eqref{eq:eta}.
+\end{proposition}
+
+\begin{proof}
+$s_{\text{correct}} - s_{\text{incorrect}} \sim \mathcal{N}(\delta, 2)$, so
+$q = \Pr(s_{\text{correct}} > s_{\text{incorrect}}) = \Phi(\delta/\sqrt{2})$,
+which inverts to Equation~\eqref{eq:delta} since $\Phi$ is strictly increasing.
+Equation~\eqref{eq:listwise} is the definition of the argmax event conditional
+on $c$; $P(0,k,\delta)=0$ and $P(k,k,\delta)=1$. Averaging over $c$ gives
+$\hat{A}_\sigma(k)$.
+\end{proof}
+
+Two things make Proposition~\ref{prop:latent} usable. First, $\gap$ and the
+distribution of $c$ are both estimable from a small labelled calibration set by
+sampling $k$ answers per task---no multi-agent system need be built. Second,
+nothing is fitted: Equation~\eqref{eq:delta} pins $\delta$, and
+Equation~\eqref{eq:listwise} is evaluated by simulation. The model is
+intentionally the simplest that respects the pairwise/listwise distinction; it
+assumes scores are conditionally independent and equally dispersed, and
+Section~\ref{sec:results} reports where those assumptions hold and where they
+fail.
+
+\subsection{Aggregation without a verifier}
+
+Self-consistency uses no verifier, so $\gap$ cannot explain it. It relies
+instead on the sampling distribution concentrating on the truth.
+
+\begin{definition}[Plurality alignment]
+Let $\hat{y}$ be the modal answer among $k$ samples. Plurality alignment is
+$\plur = \Pr(\hat{y} \text{ correct}) - \pone$, the accuracy advantage of the
+mode over a single sample.
+\end{definition}
+
+$\plur$ is also estimable from the same calibration pool at no extra cost, and
+it is the natural predictor of self-consistency's lift. Separating $\gap$ from
+$\plur$ matters empirically: we find families where $\plur > 0$ while $\gap
+\le 0$, so a system can benefit from voting while the very same model is
+useless as a judge.
+
+\subsection{Token-matched lift and the decision rule}
+\label{sec:matched}
+
+Let $\mathcal{C}(\cdot)$ denote total tokens consumed per task, prompt plus
+completion. A $k$-agent ensemble costs roughly $k$ times a single sample. We
+therefore compare it not against one sample but against the \emph{single-agent
+frontier} $a(\cdot)$: the accuracy a single agent reaches when given the same
+budget to spend serially, by generating and then revising its own answer.
+
+\begin{definition}[Token-matched lift]
+For an architecture $\mathcal{A}$ with cost $\mathcal{C}(\mathcal{A})$,
+\begin{equation}
+\lift(\mathcal{A}) \;=\; A(\mathcal{A}) \;-\; a\bigl(\mathcal{C}(\mathcal{A})\bigr).
+\end{equation}
+\end{definition}
+
+$\lift > 0$ is the claim a multi-agent architecture must support: that spending
+the budget across coordinating agents beats spending it inside one. Combining
+with Proposition~\ref{prop:decomp} gives the rule we evaluate prospectively:
+
+\begin{equation}
+\textbf{build the ensemble} \iff
+\underbrace{\hat{\eff}_\sigma(k)\bigl(\hat{\cov}(k) - \hat{\pone}\bigr)}_{\text{predicted from calibration}}
+\;>\;
+\underbrace{a\bigl(\mathcal{C}(\mathcal{A})\bigr) - \pone}_{\text{sequential gain}} .
+\label{eq:rule}
+\end{equation}
+
+Every quantity on the left is measurable in advance from
+Proposition~\ref{prop:latent} and repeated sampling; the right-hand side
+requires only running one agent at a larger budget. Section~\ref{sec:results}
+tests both the numerical prediction and the binary decision it implies.

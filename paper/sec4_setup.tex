@@ -1,0 +1,111 @@
+\section{Experimental Setup}
+\label{sec:setup}
+
+\subsection{Task families}
+
+We need tasks that span the verification spectrum, not a single benchmark. We
+use six families, \nPerFamily{} tasks each (\nTasks{} total), chosen so that the
+cost of \emph{checking} an answer varies by orders of magnitude while the cost
+of \emph{producing} one does not.
+
+\begin{description}[leftmargin=0pt,itemsep=2pt,topsep=3pt,font=\normalfont\itshape]
+\item[CSP (synthetic).] ``Find the smallest integer $n>L$ leaving remainder
+  $r_1$ mod $m_1$ and $r_2$ mod $m_2$.'' Checking is two modulo operations and
+  an upward scan; producing requires the Chinese remainder theorem or a search.
+  The high-asymmetry anchor.
+\item[WordCon (synthetic).] ``Write one sentence about $X$, exactly $N$ words
+  long, containing words $w_1$ and $w_2$.'' Checking is a token count and two
+  substring tests. A high-asymmetry task in a natural-language rather than
+  symbolic domain.
+\item[MBPP \citep{austin2021mbpp}.] Python function synthesis with executable
+  tests. The one family admitting a near-perfect external verifier, which lets
+  us separate the ceiling imposed by coverage from the ceiling imposed by the
+  selector.
+\item[GSM8K \citep{cobbe2021gsm8k}.] Grade-school word problems with a numeric
+  answer. Checking means redoing the arithmetic, but the answer is a short
+  canonical string, so voting applies.
+\item[ARC-Challenge \citep{clark2018arc}.] Multiple-choice science questions.
+  Verification is essentially re-answering; the answer space is tiny.
+\item[Logic (synthetic).] Transitive-ordering puzzles: a shuffled chain of
+  pairwise comparisons over $4$--$6$ entities, asking for the extremum.
+  Confirming a proposed answer means re-running the same derivation. The
+  low-asymmetry anchor.
+\end{description}
+
+Three families are generated programmatically from a fixed seed. This is
+deliberate: synthetic families carry no benchmark-contamination risk, their
+difficulty is tunable, and their verifiers are exact rather than approximate.
+Each family is split \nCalib{}/\nTest{} into a calibration and a held-out set
+\emph{before any model is run}, since our central prediction claim requires
+that the split not be chosen after seeing results.
+
+\subsection{Models}
+
+We use the Qwen2.5-Instruct family \citep{qwen2024qwen25} at 0.5B and 1.5B
+parameters, in \texttt{bfloat16} without quantisation, run locally with MLX on
+a single Apple M4 Pro. Using one family across scales isolates model size from
+architecture and tokenizer differences, and running locally makes the entire
+study reproducible at zero marginal cost---a deliberate choice given that our
+claims concern compute accounting. The released code runs a third scale (3B)
+unchanged; we report two because the full grid at three scales exceeds the
+compute we allotted, and we prefer two scales at full statistical power to
+three at half. Sampling uses temperature $0.7$ and
+top-$p$ $0.95$; the judge and pairwise probes are run at temperature $0$.
+Section~\ref{sec:limitations} discusses what this does and does not license us
+to say about frontier-scale models.
+
+\subsection{Architectures}
+
+All selector-based architectures read the \emph{same} pool of $n=8$ independent
+samples per task, so differences between them are attributable to selection
+alone, with the generator held fixed and comparisons paired at the task level.
+
+\begin{description}[leftmargin=0pt,itemsep=2pt,topsep=3pt,font=\normalfont\itshape]
+\item[Single.] One sample. The $k=1$ reference point.
+\item[Sequential refine.] One agent that generates, then revises its own answer
+  for $r-1$ further rounds, $r \in \{1,2,3,4\}$. This is the compute-matched
+  single-agent baseline and traces the frontier $a(\cdot)$.
+\item[Self-consistency.] Majority vote over the canonical answers of $k$
+  samples \citep{wang2023selfconsistency}. Undefined for families with no short
+  canonical answer (WordCon, MBPP), which we report as such rather than forcing.
+\item[Ensemble + LLM judge.] The same model, shown all $k$ candidates in
+  randomised order, picks one.
+\item[Ensemble + program verifier.] A non-LLM checker derived \emph{from the
+  problem statement alone} selects the first passing candidate. Available for
+  CSP, WordCon and MBPP. It consumes no model tokens.
+\item[Ensemble + oracle.] Selects a correct candidate when one exists. Not
+  deployable; reported as the coverage ceiling.
+\item[Debate.] $3$ agents over $2$ or $3$ rounds, each round conditioned on the
+  others' previous answers, with a final majority vote \citep{du2023debate}.
+\end{description}
+
+Selectors are evaluated at $k \in \{2,4,8\}$; for $k<8$ we average over three
+random sub-pools to reduce variance.
+
+\paragraph{Preventing verifier leakage.}
+The program verifier must not see anything the generator did not. For CSP and
+WordCon the constraints are fully stated in the prompt, so the checker is a
+direct transcription of the problem. For MBPP the prompt shows one test case,
+and the verifier may use \emph{only} that test; grading uses the held-out
+remainder of the test list. Without this precaution the verifier would be
+scored on the same signal used to select, inflating its apparent efficiency.
+
+\subsection{Token accounting}
+
+Every generation records its own prompt and completion token counts, and an
+architecture's cost is the sum over all calls it makes, including judge and
+debate turns. We count prompt tokens as well as completions because a judge
+call that reads eight candidates is expensive even when its output is one word.
+The program verifier's cost is recorded as zero model tokens; it runs in
+milliseconds of CPU, which is the point of using it.
+
+\subsection{Statistics}
+
+All intervals are $95\%$ percentile bootstrap intervals over \emph{tasks}
+($10{,}000$ resamples), since samples within a task are not independent.
+Architecture comparisons are paired on the same task set. For token-matched
+lift both arms are recomputed inside each bootstrap resample---the multi-agent
+accuracy and the sequential frontier it is priced against---because the
+baseline is itself an estimate; holding it fixed would understate the interval.
+Where we report many comparisons at once, $p$-values are Holm--Bonferroni
+adjusted. Coverage uses the unbiased $\mathrm{pass}@k$ estimator throughout.

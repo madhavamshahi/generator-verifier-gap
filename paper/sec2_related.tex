@@ -1,0 +1,56 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Repeated sampling and test-time compute.}
+Drawing many samples and keeping the best is the oldest form of test-time
+scaling. \citet{chen2021codex} introduced the unbiased $\mathrm{pass}@k$
+estimator we use for coverage; \citet{brown2024monkeys} showed coverage
+continues to grow over orders of magnitude of samples, and
+\citet{snell2024scaling} studied how best to allocate a fixed test-time budget.
+This line establishes that the \emph{coverage} factor in
+Equation~\eqref{eq:decomp-intro} is typically large. It also makes clear that
+coverage alone is not accuracy: converting it requires a selector, and
+\citet{stroebl2024limits} show formally that an imperfect verifier caps the
+returns from resampling. Our contribution relative to that work is to make the
+selector's contribution a \emph{measurable, predictable} quantity, tied to a
+diagnostic that can be run before the system exists, and to evaluate it against
+a compute-matched single agent rather than against a single sample.
+
+\paragraph{Aggregation without a verifier.}
+Self-consistency \citep{wang2023selfconsistency} takes a majority vote over
+sampled reasoning chains and needs no verifier whatsoever. \citet{li2024moreagents}
+find that this simple sampling-and-voting procedure scales with the number of
+agents and often matches more elaborate multi-agent designs. Our plurality
+alignment diagnostic is the property these methods implicitly rely on: that the
+sampling distribution is peaked on the correct answer. We treat it as a second,
+separate mechanism rather than folding it into verification, because our data
+show families where voting helps while the model's verifier is at or below
+chance.
+
+\paragraph{Verifiers and judges.}
+Training a separate verifier is highly effective when supervision is available
+\citep{cobbe2021gsm8k,lightman2024verify,li2023stepaware}. In deployed
+multi-agent systems the verifier is more often the same model prompted to
+judge, a practice whose biases---including position bias---are documented by
+\citet{zheng2023judge}. A related body of work finds that models are poor at
+correcting their own reasoning without external signal
+\citep{huang2024cannot,valmeekam2023selfcritique}, tempering the optimism of
+self-refinement approaches \citep{madaan2023selfrefine}. The
+generator--verifier gap makes this a quantity rather than a verdict: the same
+model can be an excellent verifier on one family and a below-chance one on
+another, and we measure which.
+
+\paragraph{Multi-agent frameworks and their failures.}
+Debate \citep{du2023debate} and role-structured frameworks
+\citep{wu2023autogen,hong2024metagpt,qian2024chatdev} are the dominant designs.
+\citet{cemri2025why} analyse why such systems fail and produce a taxonomy of
+failure modes. Our account is complementary and predictive rather than
+diagnostic: instead of classifying failures after the fact, we identify a
+measurable precondition for success and show it forecasts the outcome.
+
+\paragraph{Cost-aware evaluation.}
+\citet{kapoor2024agents} argue that agent evaluations systematically neglect
+cost, and that controlling for it changes conclusions. We adopt that stance for
+multi-agent architecture specifically, reporting every result against a single
+agent priced at the identical token budget, and we find the correction is not
+cosmetic: it flips the sign of a substantial share of apparent gains.

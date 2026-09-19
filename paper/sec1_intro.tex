@@ -1,0 +1,105 @@
+\section{Introduction}
+
+Multi-agent architectures built from large language models are now routine
+engineering practice. Frameworks such as AutoGen, MetaGPT and ChatDev
+\citep{wu2023autogen,hong2024metagpt,qian2024chatdev} let a practitioner
+decompose a task across several model instances that propose, critique and
+aggregate one another's work, and reported gains over a single model are
+common. Yet the picture from the literature is contradictory. Multi-agent
+debate improves factuality and reasoning on some benchmarks
+\citep{du2023debate}; simply sampling more answers and voting captures much of
+the same benefit \citep{wang2023selfconsistency,li2024moreagents}; and a recent
+study of deployed multi-agent systems finds failure rates high enough to
+question whether the additional structure is doing useful work at all
+\citep{cemri2025why}. Practitioners deciding whether to build a multi-agent
+system therefore have no principled way to anticipate the answer, and the
+prevailing method---build it, then measure---is expensive and often
+inconclusive.
+
+We argue that two problems explain most of this disagreement, and that both
+are fixable.
+
+\textbf{The baseline is usually not compute-matched.} A system of $k$ agents
+spends roughly $k$ times the tokens of a single agent. Comparing it against one
+agent that produced one answer credits the architecture for compute that any
+method could have spent. The honest comparison prices the single agent at the
+same budget---letting it think longer, or revise its own answer---and asks
+whether \emph{coordination}, rather than \emph{compute}, produced the gain.
+This concern has been raised for agent evaluation generally
+\citep{kapoor2024agents} and for repeated sampling in particular
+\citep{brown2024monkeys,snell2024scaling,stroebl2024limits}, but
+compute-matched comparison is still not standard practice in the multi-agent
+literature.
+
+\textbf{There is no measurable quantity that says when to expect a gain.}
+Existing accounts are largely taxonomic: they describe what multi-agent systems
+do, or catalogue how they fail, without predicting where gains will appear.
+What is missing is a property of the \emph{task and model together} that can be
+measured cheaply, in advance, and that determines the answer.
+
+This paper supplies that quantity. Our starting point is an observation that is
+almost trivial once stated but that organises the entire empirical picture: an
+ensemble of $k$ agents can only ever be as good as the best candidate it
+produces, and it realises that potential only to the extent that its selection
+mechanism can tell good candidates from bad. Writing $\pone$ for single-sample
+accuracy, $\cov(k)$ for the probability that at least one of $k$ samples is
+correct, and $A_\sigma(k)$ for the accuracy of a system using selector $\sigma$,
+\begin{equation}
+A_\sigma(k) \;=\; \pone + \eff_\sigma(k)\,\bigl(\cov(k) - \pone\bigr),
+\label{eq:decomp-intro}
+\end{equation}
+where $\eff_\sigma(k) \in [0,1]$ is the fraction of the available
+\emph{coverage headroom} $\cov(k)-\pone$ that the selector converts into
+accuracy. Multi-agent gains require both factors to be non-trivial: headroom
+without a discriminating selector is wasted, and a perfect selector on a pool
+with no headroom has nothing to find.
+
+The useful consequence is that both factors can be estimated \emph{before}
+building the system, from a small labelled calibration set. Coverage headroom
+needs only repeated sampling. For selection we introduce the
+\textbf{generator--verifier gap} $\gap$: the probability, in excess of chance,
+that the model prefers a correct candidate over an incorrect one when shown
+both. Because $\gap$ is a \emph{pairwise} quantity while selection is
+\emph{listwise}, we supply the link with a latent-score model
+(Section~\ref{sec:framework}) that turns a measured $\gap$ into a
+parameter-free prediction of $\eff$. Verifier-free aggregation such as
+self-consistency needs no verifier at all and is governed by a second
+diagnostic, \textbf{plurality alignment} $\plur$, which measures how well the
+modal answer tracks the truth.
+
+We test this on \nTasks{} tasks spanning six families chosen to span the
+verification spectrum---from constraint-satisfaction problems whose answers can
+be checked in a line of code, to transitive-ordering puzzles where confirming
+an answer means redoing the derivation---across \nModels{} model scales and
+\nArch{} architectures, all with exact token accounting. Our contributions:
+
+\begin{enumerate}[leftmargin=1.4em,itemsep=2pt,topsep=3pt]
+\item \textbf{A decomposition and a theory.} Equation~\eqref{eq:decomp-intro}
+  separates a multi-agent system's accuracy into coverage and selection
+  efficiency, and a latent-score model predicts selection efficiency from the
+  pairwise gap $\gap$ with no free parameters (Section~\ref{sec:framework}).
+\item \textbf{Token-matched evidence that most multi-agent gains are compute, not
+  coordination.} Against a single agent priced at the same token budget,
+  \nFlip{} of the architecture--task cells that appear to gain lose that gain,
+  and the median configuration moves from \medianNaiveLift{} to
+  \medianMatchedLift{}---a change of sign (Section~\ref{sec:results}).
+\item \textbf{A prospective diagnostic.} Measured on \nCalib{} calibration
+  tasks and passed through the model with no fitted parameters, the
+  diagnostics predict held-out lift with $R^2 = \rTwoApriori{}$ without the
+  multi-agent system ever being built. As a binary build/don't-build rule they
+  are weaker---\decisionAgreement{} correct against a \decisionBaseline{}
+  majority baseline---and we report that gap rather than the raw accuracy.
+\item \textbf{A case study in a deployed setting.} On citation generation,
+  where fabricated output is a known failure mode, an external registry check
+  converts nearly all available headroom at zero token cost while the same
+  model used as its own critic performs near chance
+  (Section~\ref{sec:casestudy}).
+\end{enumerate}
+
+Our headline practical finding is a negative result with a constructive
+remedy. Multi-agent structure is not a general-purpose accuracy technique; it
+is a way of spending compute that pays off precisely when an asymmetry exists
+between producing an answer and checking one. Where that asymmetry is absent,
+the same tokens are better spent on a single agent---and where it is present,
+the effective move is usually not another language-model critic but an external
+check, which in our experiments costs no tokens at all.

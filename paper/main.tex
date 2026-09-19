@@ -1,0 +1,62 @@
+\documentclass[11pt]{article}
+\input{preamble}
+\input{numbers}
+
+\title{\bfseries The Generator--Verifier Gap Predicts When\\
+Multi-Agent LLM Architectures Beat a Compute-Matched Single Agent}
+
+\author[1]{Madhavam Pratap Shahi\thanks{Correspondence:
+\href{mailto:madhavam.shahi.12@gmail.com}{madhavam.shahi.12@gmail.com}}}
+\author[1]{Kavish Soningra}
+\author[1]{Nagendra Chaudhary}
+\affil[1]{Independent Researcher}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Multi-agent architectures built from large language models are widely deployed,
+but reports of their benefit conflict, and practitioners have no way to
+anticipate whether one will help before building it. We argue two fixable
+problems explain the disagreement: baselines are rarely matched on compute, and
+no measurable task property has been identified that governs the outcome. We
+show that a $k$-agent ensemble's accuracy decomposes exactly into
+\emph{coverage}---the chance any of its candidates is correct---and
+\emph{selection efficiency}, the fraction of that headroom its selector
+converts. We then give a latent-score model that turns a cheap pairwise probe,
+the \textbf{generator--verifier gap} $\gap$, into a parameter-free prediction of
+selection efficiency. Across \nTasks{} tasks in \nFamilies{} families spanning
+the verification spectrum, \nModels{} model scales and \nArch{} architectures,
+with exact token accounting over \nGenerations{} generations, we find that
+against a single agent priced at the same token budget, \nFlip{} of the apparent
+multi-agent gains disappear and \fracMatchedNegative{} of all configurations are
+net negative. Diagnostics measured on \nCalib{} calibration tasks predict held-out lift with
+$R^2=\rTwoApriori{}$ (Pearson $r=\corrApriori{}$), with no fitted parameters and
+without the multi-agent system ever being constructed. A case study on citation generation shows the same split in a deployed setting:
+an external registry check attains selection efficiency $\citEtaAPI{}$ at zero
+token cost, while the same model used as its own critic attains
+$\citEtaLLM{}$. The pattern that survives is narrow: ensembles selected by an external program
+verifier gain reliably, self-consistency gains where the answer distribution is
+peaked on the truth, and ensembles selected by the model judging itself gain
+nowhere. Multi-agent structure is not a general accuracy technique; it is a way
+of spending compute that pays off exactly when checking an answer is easier
+than producing one.
+\end{abstract}
+
+\input{sec1_intro}
+\input{sec2_related}
+\input{sec3_framework}
+\input{sec4_setup}
+\input{sec5_results}
+\input{sec6_casestudy}
+\input{sec7_discussion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{appendix}
+
+\end{document}

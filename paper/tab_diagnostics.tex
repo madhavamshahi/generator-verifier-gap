@@ -1,0 +1,16 @@
+\begin{tabular}{llrrrrrr}
+\toprule
+Model & Diagnostic & CSP & WordCon & MBPP & GSM8K & ARC & Logic \\
+\midrule
+Qwen2.5-0.5B & $\gap$ (verifier) & +0.00 & +0.00 & +0.00 & +0.00 & +0.00 & +0.00 \\
+ & $\plur$ (plurality) & +0.03 & -- & -- & +0.13 & +0.03 & -0.07 \\
+ & position bias & 1.00 & 0.00 & 0.20 & 1.00 & 1.00 & 1.00 \\
+ & order consistency & 0.00 & 0.00 & 0.20 & 0.00 & 0.00 & 0.00 \\
+\addlinespace
+Qwen2.5-1.5B & $\gap$ (verifier) & +0.42 & -0.27 & +0.42 & +0.05 & +0.09 & +0.05 \\
+ & $\plur$ (plurality) & +0.07 & -- & -- & +0.30 & +0.00 & +0.00 \\
+ & position bias & 0.29 & 0.59 & 0.54 & 0.42 & 0.36 & 0.18 \\
+ & order consistency & 0.58 & 0.45 & 0.58 & 0.65 & 0.00 & 0.16 \\
+\addlinespace
+\bottomrule
+\end{tabular}

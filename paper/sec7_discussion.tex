@@ -1,0 +1,96 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What the framework says to build}
+
+Read as engineering advice, the decomposition gives a short checklist that can
+be run in an afternoon on \nCalib{} labelled tasks, before any orchestration
+code is written.
+
+\begin{enumerate}[leftmargin=1.4em,itemsep=2pt,topsep=3pt]
+\item \textbf{Measure the headroom.} Sample $k$ answers per task and compute
+  $\cov(k)-\pone$. If it is small, no architecture will help, and the effort
+  belongs in a better generator or a better prompt rather than in
+  orchestration.
+\item \textbf{Measure the gap $\gap$.} Show the model one correct and one
+  incorrect candidate and ask which is right. If $\gap \approx 0$, a
+  language-model critic will not convert the headroom, no matter how the
+  critique is prompted or how many rounds it runs.
+\item \textbf{Look for an external check first.} A program that validates the
+  task's own stated constraints is the highest-efficiency selector available
+  and, unlike a judge, consumes no model tokens. Much of the benefit attributed
+  to multi-agent design in practice is really the benefit of having a checker.
+\item \textbf{Price the alternative.} Compare the predicted gain against what
+  one agent achieves with the same budget spent serially. This is the
+  comparison that decides whether the architecture is worth its complexity.
+\end{enumerate}
+
+The uncomfortable implication for multi-agent design is that the most common
+pattern---adding a language-model critic or reviewer agent---is the one our
+framework is least optimistic about, because it depends entirely on $\gap$
+being large for the specific model and task at hand, and $\gap$ is exactly what
+practitioners do not currently measure.
+
+\subsection{Reconciling conflicting reports}
+
+The framework explains why the literature disagrees without anyone being wrong.
+Studies that report large multi-agent gains tend to use tasks with substantial
+coverage headroom and either a strong external verifier or an answer
+distribution peaked on the truth; studies that report little benefit tend to use
+tasks where verification is as hard as generation, or compare against stronger
+baselines. Because $\gap$ and $\plur$ vary across both tasks \emph{and} models,
+two papers can run the same architecture on different benchmarks and reach
+opposite conclusions that are both correct. The prescription is not to settle
+the argument in general but to measure the two diagnostics in each new setting.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+\paragraph{Model scale.} Our experiments use open models at 0.5B and 1.5B parameters, run locally. This was a deliberate choice---it makes the study
+exactly reproducible at zero marginal cost, which matters for a paper whose
+central claim is about compute accounting---but it is also the main limit on
+what we can claim. Frontier models are better verifiers, so $\gap$ should be
+larger for them and selection efficiency correspondingly higher. Our scale analysis (Section~\ref{sec:results}) contrasts the two scales we have, which shows the diagnostics are model-dependent rather than task-intrinsic but establishes no trend: two points determine a line and test nothing. Extrapolating to models two orders of magnitude larger is not something our data licenses, and we make no such claim. What we do claim is
+scale-independent: the \emph{decomposition} is an identity, the need for
+compute-matched baselines is a matter of accounting, and the diagnostics remain
+measurable at any scale. Whether the specific numbers transfer is an empirical
+question we cannot answer here.
+
+\paragraph{The latent-score model is a simplification.} Definition~\ref{def:latent}
+assumes verifier scores are conditionally independent across candidates and
+equally dispersed for correct and incorrect ones. Real judges violate both:
+they see all candidates at once, and a confident wrong answer may attract a
+higher score than a hedged right one. We report where the prediction holds and
+where it breaks rather than claiming the model is correct.
+
+\paragraph{Task families are a sample, not a census.} Six families cannot span
+every kind of verification asymmetry. Our synthetic families are exactly
+checkable by construction, which is what makes them useful anchors, but it also
+makes them unrepresentative of open-ended work where no ground truth exists at
+all---precisely the regime where much multi-agent deployment happens, and where
+our framework predicts the least benefit but can offer no measurement.
+
+\paragraph{Architectures are a sample too.} We test the designs that dominate
+the literature---voting, judging, debate, refinement---but not tool-using
+agents, long-horizon planning, or role-specialised pipelines where agents solve
+genuinely different sub-problems. Our framework applies to the selection step of
+any such system; it does not model the decomposition step.
+
+\paragraph{Single-answer tasks.} The decomposition assumes a task has a
+selectable answer. It does not directly cover systems whose agents each
+contribute a different part of one artifact, which is how many deployed
+pipelines---including the one in our case study---actually work. We address that
+gap only structurally, by classifying which stages admit an external check.
+
+\section{Conclusion}
+
+We set out to answer a question practitioners face constantly and currently
+answer by guesswork: is a multi-agent architecture worth building for this task?
+The answer we arrive at is that the question is well-posed and cheaply
+decidable. An ensemble's accuracy is its coverage times its selection
+efficiency, selection efficiency is predictable from a pairwise probe that costs
+a few dozen model calls, and the honest baseline is one agent given the same
+tokens. Measured this way, multi-agent structure stops looking like a general
+technique and starts looking like what it is: an effective way to exploit an
+asymmetry between generating and checking, and an expensive way to spend tokens
+when that asymmetry is absent.
