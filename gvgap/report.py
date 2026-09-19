@@ -153,17 +153,20 @@ def table_matched(ml: pd.DataFrame, model: str | None = None) -> str:
     return "\n".join(lines)
 
 
-ALL_MACROS = """nFamilies nPerFamily nTasks nModels nArch nCalib nTest
-nGenerations nFlip nCellsPositiveNaive nCellsFlipped
-medianNaiveLift medianMatchedLift fracMatchedNegative rTwoApriori rTwoTransfer
-maeApriori corrApriori nPredCells decisionAgreement nDecisionCells
-decisionBaseline decisionPrecision decisionRecall decisionLift
-etaProgSigMedian nSigCells nSigProgPositive rTwoJudgeArm nJudgeArmCells
-etaProgMedian etaJudgeMedian etaVoteMedian etaJudgeMin nEtaNegative nEtaCells
-Gmin Gmax nGnegative maxPositionBias minOrderConsistency minPairs
-nDroppedLowPairs rTwoAprioriNoFilter nCitTopics citHallucRate citPone
-citCoverage citEtaLLM citEtaAPI citG citPredEta citSaysReal citLLMTokens
-citAccLLM citAccAPI nCitUnresolved""".split()
+ALL_MACROS = """
+nFamilies nPerFamily nTasks nModels nArch nCalib nTest nGenerations nFlip
+nCellsPositiveNaive nCellsFlipped medianNaiveLift medianMatchedLift
+fracMatchedNegative rTwoApriori rTwoTransfer maeApriori corrApriori
+nPredCells decisionAgreement nDecisionCells decisionBaseline
+decisionPrecision decisionRecall decisionLift etaProgSigMedian nSigCells
+nSigProgPositive rTwoJudgeArm nJudgeArmCells etaProgMedian etaJudgeMedian
+etaVoteMedian etaJudgeMin nEtaNegative nEtaCells Gmin Gmax nGnegative
+maxPositionBias minOrderConsistency minPairs nDroppedLowPairs
+rTwoAprioriNoFilter nCitTopics citHallucRate citPone citCoverage citEtaLLM
+citEtaAPI citG citPredEta citSaysReal citLLMTokens citAccLLM citAccAPI
+nCitUnresolved citUnparsed citParseable citHallucLoose citHallucMid citTPR
+citTNR citMedianRatio
+""".split()
 
 
 def main() -> None:
@@ -310,6 +313,15 @@ def main() -> None:
             macro("citLLMTokens", f"{cs['llm_verifier_tokens']:,}"),
             macro("citAccLLM", f"{cs['acc_llm_verifier']:.2f}"),
             macro("citAccAPI", f"{cs['acc_api_verifier']:.2f}"),
+            macro("citUnparsed", cs.get("n_unparseable", 0)),
+            macro("citParseable", cs.get("n_parseable", 0)),
+            macro("citMedianRatio", f"{cs.get('median_match_ratio', float('nan')):.2f}"),
+            macro("citHallucMid",
+                  pct(cs.get("threshold_sensitivity", {}).get("0.80", float("nan")), 0)),
+            macro("citHallucLoose",
+                  pct(cs.get("threshold_sensitivity", {}).get("0.70", float("nan")), 0)),
+            macro("citTPR", f"{cs['verifier_tpr']:.2f}"),
+            macro("citTNR", f"{cs['verifier_tnr']:.2f}"),
         ]
 
     # Later definitions win in TeX only with \renewcommand, so emit the

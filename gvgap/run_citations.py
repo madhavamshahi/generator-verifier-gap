@@ -22,6 +22,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from gvgap import citations as CIT
+from gvgap import prompts as P
 from gvgap.engine import Runner
 from gvgap.metrics import boot, pass_at_k
 from gvgap.theory import predict_eta
@@ -68,12 +69,16 @@ def main() -> None:
     # ---- 2. ground truth via OpenAlex ---------------------------------
     truth: list[list[bool | None]] = []
     ratios: list[list[float | None]] = []
+    n_unparsed = [0]
     for i, pool in enumerate(pools):
         row, rr = [], []
         for ref in pool:
             if not ref.title:
-                # An empty generation is a genuine failure to produce a
-                # reference, which is different from an unresolvable one.
+                # The model produced nothing parseable. That is a failure to
+                # follow the format, not a fabricated citation, so we count it
+                # separately and report it rather than folding it into the
+                # hallucination rate.
+                n_unparsed[0] += 1
                 row.append(False); rr.append(0.0); continue
             ok, ratio = is_real(ref, oa)
             row.append(ok); rr.append(ratio)
@@ -90,7 +95,10 @@ def main() -> None:
     print(f"resolved {len(flat)}/{len(flat_all)} candidates "
           f"({n_unresolved} unresolved, excluded); "
           f"throttled {oa.throttled}, failed {oa.failed}", flush=True)
-    print(f"hallucination rate: {1 - np.mean(flat):.3f}", flush=True)
+    parsed = [t for row, pool in zip(truth, pools)
+              for t, ref in zip(row, pool) if ref.title and t is not None]
+    print(f"unparseable generations: {n_unparsed[0]}/{len(flat_all)}", flush=True)
+    print(f"hallucination rate (of parseable): {1 - np.mean(parsed):.3f}", flush=True)
     # Topics are usable only if every candidate resolved, so that p1, coverage
     # and the selectors are all computed over the same complete pools.
     usable = [i for i in range(len(topics))
@@ -170,14 +178,14 @@ def main() -> None:
         A, B = ((pools[i][gj], pools[i][bj]) if a_is_correct
                 else (pools[i][bj], pools[i][gj]))
         fmt = lambda x: f"Title: {x.title}\nFirst author: {x.author}\nYear: {x.year}"
-        pq.append(CIT.PAIR_USER.format(
+        pq.append(P.PAIR_USER.format(
             problem=f"Which of these is a real published paper on "
                     f"{topics[i]}?",
             a=fmt(A), b=fmt(B)))
         pkey.append("A" if a_is_correct else "B")
     G = float("nan")
     if pq:
-        pg = r.chat(CIT.PAIR_SYSTEM, pq, max_tokens=100, temp=0.0,
+        pg = r.chat(P.PAIR_SYSTEM, pq, max_tokens=100, temp=0.0,
                     seeds=[0] * len(pq))
         hits = scored = 0
         for g, key in zip(pg, pkey):
@@ -200,7 +208,10 @@ def main() -> None:
         "openalex_throttled": oa.throttled, "openalex_failed": oa.failed,
         "k": K,
         "match_threshold": MATCH_THRESHOLD,
-        "hallucination_rate": float(1 - np.mean(flat)),
+        "hallucination_rate": float(1 - np.mean(parsed)),
+        "hallucination_rate_incl_unparsed": float(1 - np.mean(flat)),
+        "n_unparseable": int(n_unparsed[0]),
+        "n_parseable": int(len(parsed)),
         "p1": p1, "coverage": cov, "headroom": cov - p1,
         "acc_llm_verifier": acc_llm, "acc_api_verifier": acc_api,
         "eta_llm_verifier": eta_llm, "eta_api_verifier": eta_api,

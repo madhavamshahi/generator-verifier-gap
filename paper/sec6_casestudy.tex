@@ -27,26 +27,56 @@ resolved.
 
 \subsection{Results}
 
-The generator hallucinates heavily: \citHallucRate{} of proposed references
-could not be found, so a single candidate is real with probability
-$\citPone{}$. Coverage is much higher---at least one of eight candidates
-resolves for $\citCoverage{}$ of topics---so the headroom is large and the
-entire question is which selector can convert it.
+The generator fabricates at scale. Of \nCitTopics$\times 8$ candidates,
+\citUnparsed{} were not parseable as references at all; of the
+\citParseable{} that were, \citHallucRate{} could not be matched to any
+indexed work. A single candidate is therefore real with probability
+$\citPone{}$, and at least one of eight resolves for only $\citCoverage{}$ of
+topics.
 
+\paragraph{The rate depends on the match threshold, the conclusion does not.}
+Title matching is a similarity judgement, so we report the whole curve rather
+than one cutoff. At our threshold of $0.88$ the fabrication rate is
+\citHallucRate{}; relaxing it to $0.80$ gives \citHallucMid{} and to $0.70$
+gives \citHallucLoose{}. The median match ratio across all candidates is
+\citMedianRatio{}, far below any defensible cutoff. We keep $0.88$ because
+inspection shows looser thresholds admit genuinely different papers---a
+fabricated ``Graph Neural Networks for Molecular Property Prediction: A
+Systematic Review'' matches a real but distinct paper on regularised graph
+networks at $0.71$---so the looser numbers understate fabrication rather than
+correcting it. What survives every threshold is the qualitative claim: most of
+what this generator proposes does not exist.
+
+\paragraph{Neither verifier faces the same problem.}
 \begin{description}[leftmargin=0pt,itemsep=1pt,topsep=2pt,font=\normalfont\itshape]
 \item[The model as its own critic.] Asked whether each reference is real, the
-  model answers ``real'' for \citSaysReal{} of candidates, including most of the
-  fabricated ones. Its pairwise gap on this task is $\gap = \citG{}$, and its
-  realised selection efficiency is $\eff = \citEtaLLM{}$, at a cost of
-  \citLLMTokens{} tokens.
-\item[The external registry.] The same selection made by an OpenAlex lookup
+  model is not credulous but indiscriminately sceptical: it answers ``real''
+  for only \citSaysReal{} of candidates, rejecting \citTNR{} of fabrications
+  while also rejecting three quarters of the genuine ones
+  ($\mathrm{TPR}=\citTPR{}$). Its balanced accuracy is barely above chance, and
+  its pairwise gap is $\gap = \citG{}$---\emph{below} chance, meaning that
+  shown one real and one fabricated reference it prefers the fabrication more
+  often than not. Its realised selection efficiency is $\eff = \citEtaLLM{}$
+  at a cost of \citLLMTokens{} tokens.
+\item[The external registry.] The same selection made by a registry lookup
   attains $\eff = \citEtaAPI{}$ at zero model tokens, raising accuracy from
   $\citPone{}$ to $\citAccAPI{}$.
 \end{description}
 
-The latent-score model of Proposition~\ref{prop:latent}, given only the measured
-$\gap$, predicts $\hat{\eff} = \citPredEta{}$ for the critic---derived without
-running the selection at all.
+Given only the measured $\gap$, the latent-score model of
+Proposition~\ref{prop:latent} predicts $\hat{\eff} = \citPredEta{}$---correctly
+anticipating that this critic is worse than useless, without the selection
+being run.
+
+\paragraph{What this case study cannot support.}
+Coverage here is very low: only six of \nCitTopics{} topics contain any real
+reference among their eight candidates, so the comparison between selectors
+rests on a handful of items and the efficiencies should be read as directional
+rather than precise. The fabrication rate and the gap $\gap$ rest on far more
+data (\citParseable{} candidates and every discriminating pair available) and
+we report those with more confidence. We also note that a 1.5B model is a
+worst case for this task; we would expect a frontier model to fabricate far
+less, and we make no claim about where its $\gap$ would sit.
 
 \subsection{What the case study shows}
 
