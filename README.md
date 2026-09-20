@@ -220,6 +220,15 @@ gvgap/
 data/               the frozen task suite (6 × 90 tasks)
 results/raw/        per-task outcomes for every architecture
 paper/              LaTeX source, 8 figures, main.pdf
+  main.tex          preprint build (article, one column)
+  main_ieee.tex     IEEE build (IEEEtran, two columns, same sections)
+```
+
+Both builds share every section file, table, figure, `numbers.tex` and
+`abstract.tex`, so results only ever have to be regenerated once:
+
+```bash
+cd paper && pdflatex main_ieee && bibtex main_ieee && pdflatex main_ieee && pdflatex main_ieee
 ```
 
 ## Reproducing every number

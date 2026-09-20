@@ -40,19 +40,18 @@ Multi-agent systems fail, when they fail, on the second factor.
 
 \begin{table}[t]
 \centering\small
-\input{tab_main}
 \caption{Accuracy by architecture and family, and mean token cost per task.
 The oracle row is the coverage ceiling: it is not deployable, and the distance
 between it and the deployable selectors is the accuracy the ensemble generated
 but could not identify.}
 \label{tab:main}
+\input{tab_main}
 \end{table}
 
 \subsection{R2: The generator--verifier gap varies enormously, and is sometimes negative}
 
 \begin{table}[t]
 \centering\small
-\input{tab_diagnostics}
 \caption{The two cheap diagnostics measured on the \nCalib{}-task calibration
 split, with judge position bias (the rate at which the first-listed candidate
 is chosen; $0.5$ is unbiased) and order consistency (how often the judge names
@@ -61,6 +60,7 @@ that simply picks a position scores $0$). $\gap$ ranges from \Gmin{} to \Gmax{};
 \nGnegative{} cells are negative, meaning the model prefers its own incorrect
 answers more often than its correct ones.}
 \label{tab:diagnostics}
+\input{tab_diagnostics}
 \end{table}
 
 Table~\ref{tab:diagnostics} reports $\gap$ and $\plur$ per cell. The spread is
@@ -140,11 +140,11 @@ inside every resample.}
 
 \begin{table}[t]
 \centering\small
-\input{tab_matched}
 \caption{Token-matched lift by family and architecture. $^{*}$ marks
 Holm--Bonferroni adjusted $p<0.05$. Compare against the naive comparison
 against a single sample, which is what most of the literature reports.}
 \label{tab:matched}
+\input{tab_matched}
 \end{table}
 
 This is the result with the most direct bearing on practice. Measured against a

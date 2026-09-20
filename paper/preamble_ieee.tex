@@ -1,0 +1,62 @@
+% ---------------------------------------------------------------------------
+% IEEEtran preamble.  Loaded only by main_ieee.tex; the preprint build
+% (main.tex) keeps preamble.tex.  Two jobs: mirror preamble.tex, and make the
+% shared section sources survive a two-column layout unedited.
+% ---------------------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+% No lmodern and no geometry: IEEEtran sets its own Times-like fonts and the
+% margins the IEEE templates require.
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[numbers,sort&compress]{natbib}   % numeric [1], [2]-[4]; keeps \citet/\citep
+\usepackage{enumitem}
+\usepackage{stfloats}                        % lets wide floats sit at column bottoms
+\usepackage[hidelinks,breaklinks]{hyperref}  % IEEEtran wants hyperref loaded last
+
+\captionsetup{font=footnotesize,labelfont=bf,labelsep=period,skip=4pt}
+\captionsetup[sub]{font=footnotesize,labelfont=bf}
+\setlength{\parskip}{0pt}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\newcommand{\pone}{p_1}
+\newcommand{\cov}{C}
+\newcommand{\gap}{G}
+\newcommand{\plur}{A}
+\newcommand{\eff}{\eta}
+\newcommand{\lift}{\Lambda}
+
+% Display equations too wide for a 3.5in column are wrapped in \autofit by the
+% section sources; in the one-column build it is the identity.
+\newcommand{\autofit}[1]{%
+  \resizebox{\columnwidth}{!}{$\displaystyle #1$}}
+
+% --- Two-column float handling --------------------------------------------
+% Every figure and table in this paper is designed full-width (7-8 column
+% tables, wide multi-panel figures), so promote all of them to double-column
+% floats rather than forking the section sources.  Inside a starred float
+% \textwidth is the full page width, so the existing width=\textwidth graphics
+% are already correct.
+\makeatletter
+\renewenvironment{figure}[1][\fps@figure]{\@dblfloat{figure}[#1]}{\end@dblfloat}
+\renewenvironment{table}[1][\fps@table]{\@dblfloat{table}[#1]\footnotesize}{\end@dblfloat}
+\makeatother
+
+% Ten double-column floats in an eight-page paper: give LaTeX room so they do
+% not all migrate to the end.
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.7}
+\renewcommand{\textfraction}{0.07}
+\setcounter{dbltopnumber}{4}
+\setcounter{totalnumber}{6}
