@@ -1,0 +1,47 @@
+% ---------------------------------------------------------------------------
+% Supplementary material: the appendix, built as its own document from the
+% same appendix.tex the preprint uses.  Only needed for the conference route
+% -- in journal mode main_ieee.tex binds the appendix into the paper itself.
+% Compile: pdflatex supplement_ieee -> bibtex supplement_ieee -> pdflatex x2
+% ---------------------------------------------------------------------------
+\documentclass[conference]{IEEEtran}
+\newif\ifanon \anonfalse   % keep in step with main_ieee.tex
+\input{preamble_ieee}
+\input{title}
+\input{numbers}
+
+\begin{document}
+
+\title{Supplementary Material for\\ \papertitle}
+
+\ifanon
+  \author{\IEEEauthorblockN{Anonymous Submission}
+  \IEEEauthorblockA{Paper ID \#XXXX}}
+\else
+  \author{%
+  \IEEEauthorblockN{Madhavam Pratap Shahi}
+  \IEEEauthorblockA{Independent Researcher\\
+  madhavam.shahi.12@gmail.com}
+  \and
+  \IEEEauthorblockN{Kavish Soningra}
+  \IEEEauthorblockA{Independent Researcher}
+  \and
+  \IEEEauthorblockN{Nagendra Chaudhary}
+  \IEEEauthorblockA{Independent Researcher}
+  }
+\fi
+
+\maketitle
+
+\noindent
+Section, equation, table and figure numbers cited below refer to the main
+paper. The code, the frozen task suite and every cached generation are at
+\url{https://github.com/madhavamshahi/generator-verifier-gap}.
+
+\appendices
+\input{appendix}
+
+\bibliographystyle{IEEEtranN}
+\bibliography{refs}
+
+\end{document}

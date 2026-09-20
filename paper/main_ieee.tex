@@ -1,33 +1,73 @@
 % ---------------------------------------------------------------------------
 % IEEE build.  Same sections, tables, figures and numbers as main.tex.
-%   conference proceedings : \documentclass[conference]{IEEEtran}
-%   IEEE journal/transactions : \documentclass[journal]{IEEEtran}
-%   double-blind review copy  : add the "peerreview" option and see the
-%                               \author block below
+% Change one word on the \documentclass line to pick the route:
+%   [journal]    IEEE Access / Transactions submission.  No page limit, so the
+%                appendix binds into the paper and the author block becomes a
+%                journal byline.  This is the default.
+%   [conference] IEEE conference proceedings.  Two-column byline, and the
+%                appendix ships separately as supplement_ieee.tex because
+%                conference tracks cap at 8-10 pages.
 % Compile: pdflatex main_ieee -> bibtex main_ieee -> pdflatex x2
 % ---------------------------------------------------------------------------
-\documentclass[conference]{IEEEtran}
+\documentclass[journal]{IEEEtran}
+
+% --- submission switches ---------------------------------------------------
+% Double-blind review copy: hides the author block.
+\newif\ifanon            \anonfalse
+% Bind the appendix into the paper instead of shipping it as the supplement.
+% Defaults to on for journals and off for conferences, where it would eat into
+% the page limit; override either way by setting it after this line.
+\newif\ifwithappendix
+\ifCLASSOPTIONconference \withappendixfalse \else \withappendixtrue \fi
+% Camera-ready copyright footer.  The venue issues the string; paste it into
+% \pubidstring and flip this to \pubidtrue.
+\newif\ifpubid           \pubidfalse
+\newcommand{\pubidstring}{%
+  979-8-XXXX-XXXX-X/26/\$31.00~\copyright~2026 IEEE}
+
 \input{preamble_ieee}
+\input{title}
 \input{numbers}
+
+\ifpubid
+  \IEEEoverridecommandlockouts
+  \IEEEpubid{\makebox[\columnwidth]{\pubidstring\hfill}%
+    \hspace{\columnsep}\makebox[\columnwidth]{}}
+\fi
 
 \begin{document}
 
-\title{The Generator--Verifier Gap Predicts When Multi-Agent LLM
-Architectures Beat a Compute-Matched Single Agent}
+\title{\papertitle}
 
-% For a double-blind submission replace this whole block with
-%   \author{Anonymous Authors}
-\author{%
-\IEEEauthorblockN{Madhavam Pratap Shahi}
-\IEEEauthorblockA{Independent Researcher\\
-madhavam.shahi.12@gmail.com}
-\and
-\IEEEauthorblockN{Kavish Soningra}
-\IEEEauthorblockA{Independent Researcher}
-\and
-\IEEEauthorblockN{Nagendra Chaudhary}
-\IEEEauthorblockA{Independent Researcher}
-}
+\ifanon
+  \ifCLASSOPTIONconference
+    \author{\IEEEauthorblockN{Anonymous Submission}
+    \IEEEauthorblockA{Paper ID \#XXXX}}
+  \else
+    \author{Anonymous Submission}
+  \fi
+\else
+  \ifCLASSOPTIONconference
+    \author{%
+    \IEEEauthorblockN{Madhavam Pratap Shahi}
+    \IEEEauthorblockA{Independent Researcher\\
+    madhavam.shahi.12@gmail.com}
+    \and
+    \IEEEauthorblockN{Kavish Soningra}
+    \IEEEauthorblockA{Independent Researcher}
+    \and
+    \IEEEauthorblockN{Nagendra Chaudhary}
+    \IEEEauthorblockA{Independent Researcher}
+    }
+  \else
+    \author{Madhavam Pratap Shahi, Kavish Soningra, and Nagendra Chaudhary%
+    \thanks{The authors are independent researchers. Correspondence:
+    madhavam.shahi.12@gmail.com. Code, data and every cached generation:
+    \url{https://github.com/madhavamshahi/generator-verifier-gap}.}}
+    \markboth{Preprint submitted to IEEE}{Shahi \MakeLowercase{\textit{et al.}}:
+    The Generator--Verifier Gap}
+  \fi
+\fi
 
 \maketitle
 
@@ -40,6 +80,9 @@ large language models, multi-agent systems, test-time compute, verification,
 ensemble selection, benchmarking
 \end{IEEEkeywords}
 
+% Lengthens the first column that the copyright footer would otherwise shorten.
+\ifpubid\IEEEpubidadjcol\fi
+
 \input{sec1_intro}
 \input{sec2_related}
 \input{sec3_framework}
@@ -48,14 +91,17 @@ ensemble selection, benchmarking
 \input{sec6_casestudy}
 \input{sec7_discussion}
 
+% IEEE orders appendices before the references.
+\ifwithappendix
+  \appendices
+  \input{appendix}
+\fi
+
 % IEEEtranN.bst is the natbib-compatible IEEE style, so \citet ("Chen et
 % al. [1]") and \citep ("[1]") both keep working.  If your venue ships only
 % IEEEtran.bst, switch the line below and expect \citet to render as a bare
 % number.
 \bibliographystyle{IEEEtranN}
 \bibliography{refs}
-
-\appendices
-\input{appendix}
 
 \end{document}

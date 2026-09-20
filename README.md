@@ -222,14 +222,25 @@ results/raw/        per-task outcomes for every architecture
 paper/              LaTeX source, 8 figures, main.pdf
   main.tex          preprint build (article, one column)
   main_ieee.tex     IEEE build (IEEEtran, two columns, same sections)
+  supplement_ieee.tex  appendix as standalone supplementary material
 ```
 
-Both builds share every section file, table, figure, `numbers.tex` and
-`abstract.tex`, so results only ever have to be regenerated once:
+Every build shares the same section files, tables, figures, `numbers.tex`,
+`abstract.tex` and `title.tex`, so results are regenerated once and all of
+them follow:
 
 ```bash
 cd paper && pdflatex main_ieee && bibtex main_ieee && pdflatex main_ieee && pdflatex main_ieee
 ```
+
+`main_ieee.tex` covers both IEEE routes from one source. `[journal]` (the
+default) targets IEEE Access or a Transactions submission: journal byline,
+running head, appendix bound in, 12 pages. `[conference]` switches to the
+proceedings layout, drops the appendix into `supplement_ieee.tex` and gives
+the two-column byline. Three switches at the top of the file handle the rest:
+`\anontrue` for a double-blind copy, `\withappendixtrue/false` to override the
+appendix default, and `\pubidtrue` plus `\pubidstring` for the camera-ready
+copyright footer.
 
 ## Reproducing every number
 
