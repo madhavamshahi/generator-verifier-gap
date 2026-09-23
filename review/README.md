@@ -29,6 +29,7 @@ An audit of `main` at `99ff91a` ("The Generator–Verifier Gap Predicts When Mul
 | [PRIOR_WORK.md](PRIOR_WORK.md) | ~80 related works grouped by theme, with overlap ratings and a must-cite shortlist |
 | [prior_work.bib](prior_work.bib) | BibTeX for all of them. arXiv entries come from the arXiv API with full author lists; classic papers were checked on CrossRef |
 | [audit.py](audit.py) | Reproduces every number in REVIEW.md: `python3 review/audit.py` (no GPU, about 10 s) |
+| [O1A_PLAN.md](O1A_PLAN.md) | How the research maps onto the O-1A criteria (checked against the USCIS Policy Manual), corrections to the O-1A report the team shared, and integrity guardrails. Not legal advice |
 
 ## The ten things to fix first
 
